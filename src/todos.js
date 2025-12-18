@@ -2,6 +2,11 @@ const router = require("express").Router();
 const Joi = require("joi");
 const logger = require("pino")();
 
+const apiLogger = (req, res, next) => {
+  logger.info({ endpoint: `${req.method} ${req.baseUrl}${req.url}` });
+  next();
+};
+
 const schemaCreate = Joi.object({
   title: Joi.string().min(3).max(100).required(),
   status: Joi.string().min(3).max(12).required().valid("pending", "done"),
@@ -25,12 +30,13 @@ const formatResponse = (statusCode, message, data) => {
   return res;
 };
 
-const getTodos = (req, res) => {
+const getTodos = (req, res, next) => {
   try {
     const params = req.query;
     const { error } = schemaUpdate.validate(params);
     if (error) {
-      return res.status(400).send({ message: error.message });
+      error.statusCode = 400;
+      return next(error);
     }
     const data = todosArr.filter((todo) => todo.status === params.status);
 
@@ -38,16 +44,17 @@ const getTodos = (req, res) => {
     res.send(result);
   } catch (error) {
     logger.info(error.message);
-    res.status(500).send({ message: "Internal server error" });
+    next(error);
   }
 };
 
-const createTodos = (req, res) => {
+const createTodos = (req, res, next) => {
   try {
     const payload = req.body;
     const { error } = schemaCreate.validate(payload);
     if (error) {
-      return res.status(400).send({ message: error.message });
+      error.statusCode = 400;
+      return next(error);
     }
 
     todosArr.push({ id: todoId++, ...payload });
@@ -55,17 +62,18 @@ const createTodos = (req, res) => {
     res.status(201).send(result);
   } catch (error) {
     logger.info(error.message);
-    res.status(500).send({ message: "Internal server error" });
+    next(error);
   }
 };
 
-const updateTodos = (req, res) => {
+const updateTodos = (req, res, next) => {
   try {
     let result = {};
     const payload = req.body;
     const { error } = schemaUpdate.validate(payload);
     if (error) {
-      return res.status(400).send({ message: error.message });
+      error.statusCode = 400;
+      return next(error);
     }
 
     const id = Number(req.params.id);
@@ -81,11 +89,11 @@ const updateTodos = (req, res) => {
     res.status(200).send(result);
   } catch (error) {
     logger.info(error.message);
-    res.status(500).send({ message: "Internal server error" });
+    next(error);
   }
 };
 
-const deleteTodos = (req, res) => {
+const deleteTodos = (req, res, next) => {
   try {
     let result = {};
     const id = Number(req.params.id);
@@ -96,12 +104,12 @@ const deleteTodos = (req, res) => {
     res.status(200).send(result);
   } catch (error) {
     logger.info(error.message);
-    res.status(500).send({ message: "Internal server error" });
+    next(error);
   }
 };
 
 router.get("/", getTodos);
-router.post("/", createTodos);
+router.post("/", apiLogger, createTodos);
 router.patch("/:id", updateTodos);
 router.delete("/:id", deleteTodos);
 
