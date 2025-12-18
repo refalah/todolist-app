@@ -108,9 +108,9 @@ const deleteTodos = (req, res, next) => {
   }
 };
 
-router.get("/", getTodos);
+router.get("/", apiLogger, getTodos);
 router.post("/", apiLogger, createTodos);
-router.patch("/:id", updateTodos);
-router.delete("/:id", deleteTodos);
+router.patch("/:id", apiLogger, updateTodos);
+router.delete("/:id", apiLogger, deleteTodos);
 
 module.exports = router;
