@@ -98,8 +98,12 @@ const deleteTodos = (req, res, next) => {
     let result = {};
     const id = Number(req.params.id);
     const todoIndex = todosArr.findIndex((todo) => todo.id === id);
-    todosArr.splice(todoIndex, 1);
-    result = formatResponse(200, "Task deleted");
+    if (todoIndex >= 0) {
+      todosArr.splice(todoIndex, 1);
+      result = formatResponse(200, "Task deleted");
+    } else {
+      result = formatResponse(200, "Task not found");
+    }
 
     res.status(200).send(result);
   } catch (error) {
